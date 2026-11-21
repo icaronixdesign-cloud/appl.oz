@@ -69,7 +69,7 @@ export default function HomePage() {
               return (
                 <li className="rail-panel" data-rail-panel key={step.title}>
                   <span className="rail-number" data-rail-number aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-                  <article className="rail-card" data-rail-card>
+                  <article className="rail-card" data-rail-card data-trade-step={index + 1}>
                     <span className="rail-card-icon"><Icon size={26} aria-hidden="true" /></span>
                     <p className="rail-card-step">Etapa {index + 1} de {tradeSteps.length}</p>
                     <h3>{step.title}</h3>
