@@ -190,6 +190,8 @@ export class PhoneScene {
   private envTarget?: THREE.WebGLRenderTarget;
   private cameraScreen?: CameraScreen;
   private cameraVideo?: HTMLVideoElement;
+  private videoTexture?: THREE.VideoTexture;
+  private videoBlocked = false;
   private controlMaterial?: THREE.MeshPhysicalMaterial;
   private controlGlow?: THREE.Sprite;
   private controlRipple?: THREE.Sprite;
@@ -481,10 +483,13 @@ export class PhoneScene {
     video.playsInline = true;
     video.crossOrigin = "anonymous";
     video.preload = "auto";
+    video.setAttribute("playsinline", "");
+    video.setAttribute("muted", "");
     const texture = new THREE.VideoTexture(video);
     texture.minFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
     this.cameraVideo = video;
-    this.screenMaterial.uniforms.uCam.value = texture;
+    this.videoTexture = texture;
   }
 
   setFinish(finish: Finish) {
@@ -607,15 +612,20 @@ export class PhoneScene {
     this.screenMaterial.uniforms.uCamMix.value = mix;
     const video = this.cameraVideo;
     if (video) {
-      if (active && video.paused) video.play().catch(() => undefined);
+      if (active && video.paused && !this.videoBlocked) {
+        // Autoplay can be refused (iOS Low Power Mode, data saver): keep the drawn camera app instead.
+        video.play().catch(() => { this.videoBlocked = true; });
+      }
       if (!active && !video.paused) video.pause();
-    } else if (active && !this.cameraScreen) {
-      this.cameraScreen = new CameraScreen();
-      this.screenMaterial.uniforms.uCam.value = this.cameraScreen.texture;
     }
-    const clock = video ? video.currentTime % CAMERA_LOOP : t;
+    // The video only takes over once it has a frame to show; until then the display never goes black.
+    const useVideo = Boolean(video && this.videoTexture && !this.videoBlocked && video.readyState >= 2 && !video.paused);
+    if (active && !useVideo && !this.cameraScreen) this.cameraScreen = new CameraScreen();
+    const source = useVideo ? this.videoTexture : this.cameraScreen?.texture;
+    if (source && this.screenMaterial.uniforms.uCam.value !== source) this.screenMaterial.uniforms.uCam.value = source;
+    const clock = useVideo && video ? video.currentTime % CAMERA_LOOP : t;
     const { zoom, glow, ripple } = active ? cameraTimeline(clock) : { zoom: 1, glow: 0, ripple: -1 };
-    if (active && !video) this.cameraScreen?.draw(zoom, glow);
+    if (active && !useVideo) this.cameraScreen?.draw(zoom, glow);
 
     const light = glow * mix;
     if (this.controlMaterial) this.controlMaterial.emissiveIntensity = light * 1.6;

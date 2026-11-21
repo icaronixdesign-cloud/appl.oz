@@ -108,7 +108,7 @@ export const showcase = {
    * Vazio = interface de câmera desenhada pelo site. O brilho do botão segue o mesmo relógio:
    * toques em 0,9 s e 4,9 s, zoom 1→5× de 1,2 a 3,0 s e 5→1× de 5,2 a 7,0 s.
    */
-  cameraVideo: "",
+  cameraVideo: "/videos/controle-camera.mp4",
   intro: {
     eyebrow: "Novo na Appl.Oz",
     description: "Role para conhecer o novo Pro de perto.",
