@@ -15,15 +15,25 @@
   pointer-events: none;
 }
 .xp-bg {
-  --px: 70%;
-  --py: 50%;
   position: absolute;
   inset: 0;
+  overflow: hidden;
   background:
-    radial-gradient(46vmax 38vmax at var(--px) var(--py), #3d2509c4 0%, #1f1306a1 32%, transparent 68%),
     radial-gradient(120% 52% at 50% 122%, #46290a 0%, #1d1206 30%, transparent 60%),
     radial-gradient(70% 60% at 6% -4%, #17171b 0%, transparent 62%),
     var(--stage);
+}
+/* Warm light behind the phone. Painted once; the scene moves it with a transform that follows the device. */
+.xp-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 63vmax;
+  height: 52vmax;
+  margin: -26vmax 0 0 -31.5vmax;
+  background: radial-gradient(closest-side, #3d2509c4 0%, #1f1306a1 47%, transparent 100%);
+  transform: translate3d(70vw, 50svh, 0);
+  will-change: transform;
 }
 .xp-bg::after {
   position: absolute;
@@ -379,6 +389,7 @@
 }
 
 @media (max-width: 720px) {
+  .xp-glow { transform: translate3d(52vw, 87svh, 0); }
   .xp-loader { top: 80%; left: 50%; }
   .xp-backtext { justify-content: flex-start; padding-top: calc(var(--header-height) + 9svh); }
   .xp-backtext span { font-size: 21vw; }
@@ -391,31 +402,95 @@
   .xp-hero-tag { display: none; }
   .marquee { padding-block: .875rem; }
   .xp-intro-layout { padding-block: calc(var(--header-height) + 1.5rem) 2rem; }
-  .xp-feature-layout { align-items: flex-end; padding-bottom: 2.25rem; }
-  .xp-feature-content {
-    margin-inline: calc(-1 * var(--gutter));
-    padding: 3.5rem var(--gutter) 0;
-    background: linear-gradient(180deg, transparent, #070708d9 28%, #070708f2);
-    width: calc(100% + 2 * var(--gutter));
-  }
-  .xp-feature h2 { margin-top: 1rem; font-size: clamp(2.2rem, 10vw, 3rem); }
-  .xp-feature-description { margin-top: .875rem; font-size: 1rem; }
-  .chips { margin-top: 1.125rem; }
-  .xp-launch-layout { align-items: flex-end; padding-bottom: 1.75rem; }
+  /*
+   * Glass cards. The phone fills the screen behind them and each card scrolls over it, settling in the
+   * middle as its pose lands. Dark tint first, blur second: white type stays legible even over the silver back.
+   */
+  .xp-feature-content,
   .xp-launch-content {
-    margin-inline: calc(-1 * var(--gutter));
-    padding: 3rem var(--gutter) 0;
-    width: calc(100% + 2 * var(--gutter));
-    background: linear-gradient(180deg, transparent, #070708e0 22%, #070708f5);
+    position: relative;
+    width: min(100%, 25rem);
+    border-radius: 1.75rem;
+    background:
+      radial-gradient(120% 70% at 50% 0%, #ffca3712, transparent 62%),
+      linear-gradient(180deg, #1c1c2199 0%, #111114bd 55%, #0b0b0dcc 100%);
+    box-shadow: 0 30px 70px -24px #000000eb, 0 2px 12px #00000047;
+    -webkit-backdrop-filter: blur(24px) saturate(165%);
+    backdrop-filter: blur(24px) saturate(165%);
+    text-align: center;
+    will-change: transform, opacity;
   }
-  .xp-launch h2 { margin-top: .875rem; font-size: clamp(2.3rem, 10.5vw, 3.1rem); }
-  .xp-launch-description { margin-top: .875rem; font-size: .9688rem; }
-  .xp-launch .actions { margin-top: 1.25rem; }
-  .xp-launch .actions .button { flex: 1 1 auto; }
-  .finish { margin-top: 1.25rem; padding-top: 1rem; }
+  /* Hairline edge with a specular highlight on top, like light catching a pane of glass. */
+  .xp-feature-content::before,
+  .xp-launch-content::before {
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    content: "";
+    background: linear-gradient(170deg, #ffffff5c 0%, #ffffff1f 24%, #ffffff0d 58%, #ffca3738 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .xp-feature-layout { justify-content: center; padding-block: 1.25rem; }
+  .xp-feature-content { padding: 1.5rem 1.25rem 1.375rem; }
+  .xp-feature-index { justify-content: center; gap: .625rem; color: #dcd7d1; font-size: .6875rem; letter-spacing: .2em; }
+  .xp-feature-index span { width: auto; height: 1.625rem; padding-inline: .625rem; border-radius: var(--radius-pill); font-size: .75rem; letter-spacing: .04em; }
+  .xp-feature h2 { margin-top: .875rem; font-size: clamp(1.95rem, 8.6vw, 2.6rem); line-height: 1; letter-spacing: -.06em; }
+  .xp-feature-description { max-width: 21.5rem; margin: .75rem auto 0; color: #e2ddd7; font-size: .9375rem; line-height: 1.55; text-wrap: pretty; }
+  .xp-feature .chips { justify-content: center; gap: .375rem; margin-top: 1.125rem; }
+  /* No nested blur inside the card: the card already samples the scene once. */
+  .xp-feature .chips li {
+    padding: .375rem .75rem;
+    border-color: #ffffff1f;
+    background: #ffffff0f;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    font-size: .75rem;
+  }
+
+  .xp-launch-layout { align-items: flex-end; justify-content: center; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .xp-launch-content { padding: 1.5rem 1.25rem 1.25rem; }
+  .xp-launch .eyebrow { justify-content: center; font-size: .75rem; }
+  .xp-launch .eyebrow::after { width: var(--space-3); height: 1px; content: ""; background: currentColor; }
+  .xp-launch h2 { margin-top: .75rem; font-size: clamp(2rem, 9vw, 2.75rem); }
+  .xp-launch .xp-launch-model { margin-bottom: .45em; }
+  .xp-launch-description { max-width: 21.5rem; margin: .75rem auto 0; color: #e2ddd7; font-size: .9375rem; line-height: 1.55; text-wrap: pretty; }
+  .xp-launch .actions { flex-direction: column; align-items: stretch; gap: .625rem; margin-top: 1.25rem; }
+  .xp-launch .actions .button { width: 100%; min-height: 3.25rem; }
+  .finish { margin-top: 1.125rem; padding-top: 1rem; }
+  .finish-options { justify-content: center; }
   .finish-note { display: none; }
-  .xp-drag-zone { top: calc(var(--header-height) + .5rem); bottom: auto; left: 0; width: 100%; height: 40%; }
+  .xp-drag-zone { top: calc(var(--header-height) + .5rem); bottom: auto; left: 0; width: 100%; height: 36%; }
   .xp-drag-hint { display: none; }
+}
+
+/* Short phones (and Safari with its bars showing): tighter cards so the phone keeps the top of the screen. */
+@media (max-width: 720px) and (max-height: 720px) {
+  .xp-feature-content { padding-block: 1.25rem 1.125rem; }
+  .xp-feature h2 { font-size: clamp(1.8rem, 8vw, 2.3rem); }
+  .xp-feature-description { font-size: .875rem; }
+  .xp-launch-content { padding: 1.125rem 1rem 1rem; }
+  .xp-launch h2 { margin-top: .5rem; font-size: clamp(1.75rem, 8vw, 2.25rem); }
+  .xp-launch-description { margin-top: .5rem; font-size: .875rem; line-height: 1.45; }
+  .xp-launch .actions { gap: .5rem; margin-top: .875rem; }
+  .xp-launch .actions .button { min-height: 2.875rem; }
+  .finish { margin-top: .75rem; padding-top: .75rem; }
+  .finish-options { margin-top: .5rem; }
+}
+
+/* Without blur (or when the system asks for less transparency) the cards turn solid instead of see-through. */
+@media (max-width: 720px) and (prefers-reduced-transparency: reduce) {
+  .xp-feature-content, .xp-launch-content { background: #121215f2; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (max-width: 720px) {
+    .xp-feature-content, .xp-launch-content { background: #121215eb; }
+  }
 }
 
 @media (max-width: 380px) {

@@ -21,14 +21,22 @@ const desktopPoses: Pose[] = [
   { x: 0.38, y: -0.02, h: 0.8, yaw: TAU + PI - 0.5, pitch: 0.06, roll: -0.1, fx: 0, fy: 0, screen: 1, halo: 1, haloSize: 1.3, float: 1, interact: 1 },
 ];
 
+/**
+ * On phones the device is the backdrop: it fills the screen and the glass cards scroll over it.
+ * Each quality frames its own detail, kept clear of the card's resting place in the middle of the screen.
+ */
 const mobilePoses: Pose[] = [
   { x: 0.04, y: -0.74, h: 0.48, yaw: -0.5, pitch: 0.08, roll: -0.14, fx: 0, fy: 0, screen: 1, halo: 1, haloSize: 1.3, float: 1, interact: 0.6 },
-  { x: 0, y: -0.24, h: 0.5, yaw: PI, pitch: 0.02, roll: 0, fx: 0, fy: 0, screen: 0.7, halo: 0.85, haloSize: 1.45, float: 0.6, interact: 0.4 },
-  { x: 0, y: 0.3, h: 0.5, yaw: PI - 1.1, pitch: -0.12, roll: 0.32, fx: 0, fy: 0, screen: 0.7, halo: 0.75, haloSize: 1.2, float: 0.4, interact: 0.3 },
-  { x: 0, y: 0.34, h: 1.1, yaw: PI - 0.34, pitch: -0.2, roll: 0.05, fx: 0.07, fy: 0.33, screen: 0.7, halo: 0.45, haloSize: 0.5, float: 0.2, interact: 0.2, cam: 0 },
-  { x: 0, y: 0.3, h: 0.5, yaw: TAU - 0.58, pitch: 0.05, roll: 0.035, fx: 0, fy: 0, screen: 1.05, halo: 0.85, haloSize: 1.3, float: 0.35, interact: 0.2, cam: 1 },
-  { x: 0, y: 0.3, h: 0.52, yaw: TAU + 0.24, pitch: 0.02, roll: -0.02, fx: 0, fy: 0, screen: 1.35, halo: 0.9, haloSize: 1.3, float: 0.6, interact: 0.3, cam: 0 },
-  { x: 0, y: 0.5, h: 0.38, yaw: TAU + PI - 0.5, pitch: 0.06, roll: -0.1, fx: 0, fy: 0, screen: 1, halo: 1, haloSize: 1.3, float: 1, interact: 0.6 },
+  { x: 0, y: -0.27, h: 0.55, yaw: PI, pitch: 0.02, roll: 0, fx: 0, fy: 0, screen: 0.7, halo: 0.85, haloSize: 1.4, float: 0.6, interact: 0.4 },
+  // Design: the whole unibody, big and tilted, so the side rail runs corner to corner behind the card.
+  { x: 0.04, y: 0.04, h: 0.98, yaw: PI - 1.05, pitch: -0.1, roll: 0.26, fx: 0, fy: 0, screen: 0.7, halo: 0.7, haloSize: 1.05, float: 0.25, interact: 0.2 },
+  // Cameras: a macro on the plateau, which sits in the top third above the card.
+  { x: -0.03, y: 0.62, h: 1.16, yaw: PI - 0.3, pitch: -0.2, roll: 0.05, fx: 0.07, fy: 0.33, screen: 0.7, halo: 0.45, haloSize: 0.6, float: 0.15, interact: 0.15, cam: 0 },
+  // Camera Control: the camera app fills the screen; the lit control glows on the right edge.
+  { x: -0.06, y: 0.02, h: 0.98, yaw: TAU - 0.46, pitch: 0.04, roll: 0.03, fx: 0, fy: 0, screen: 1.05, halo: 0.7, haloSize: 1.05, float: 0.2, interact: 0.15, cam: 1 },
+  // Display: straight on, edge to edge; the wallpaper tints the glass.
+  { x: 0, y: 0.02, h: 0.96, yaw: TAU + 0.16, pitch: 0.02, roll: -0.015, fx: 0, fy: 0, screen: 1.3, halo: 0.8, haloSize: 1.05, float: 0.35, interact: 0.2, cam: 0 },
+  { x: 0, y: 0.5, h: 0.42, yaw: TAU + PI - 0.5, pitch: 0.06, roll: -0.1, fx: 0, fy: 0, screen: 1, halo: 1, haloSize: 1.3, float: 1, interact: 0.6 },
 ];
 
 type Status = "loading" | "ready" | "fallback";
@@ -37,7 +45,7 @@ export function PhoneExperience() {
   const stageRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const bgRef = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
   const backtextRef = useRef<HTMLParagraphElement>(null);
   const heroContentRef = useRef<HTMLDivElement>(null);
   const heroTagRef = useRef<HTMLAnchorElement>(null);
@@ -85,13 +93,25 @@ export function PhoneExperience() {
         sceneRef.current = null;
       });
 
-      const bg = bgRef.current;
+      // The warm glow follows the phone on the compositor: a transform, never a full-screen gradient repaint.
+      const glow = glowRef.current;
+      const size = { width: sticky.clientWidth, height: sticky.clientHeight };
+      const projected = { x: -1, y: -1 };
+      const placeGlow = () => {
+        if (glow && projected.x >= 0) glow.style.transform = `translate3d(${(projected.x * size.width).toFixed(1)}px, ${(projected.y * size.height).toFixed(1)}px, 0)`;
+      };
       scene.onProject = (x, y) => {
-        bg?.style.setProperty("--px", (x * 100).toFixed(2) + "%");
-        bg?.style.setProperty("--py", (y * 100).toFixed(2) + "%");
+        projected.x = x;
+        projected.y = y;
+        placeGlow();
       };
 
-      const resize = () => scene.setSize(sticky.clientWidth, sticky.clientHeight);
+      const resize = () => {
+        size.width = sticky.clientWidth;
+        size.height = sticky.clientHeight;
+        scene.setSize(size.width, size.height);
+        placeGlow();
+      };
       resize();
       const resizeObserver = new ResizeObserver(resize);
       resizeObserver.observe(sticky);
@@ -111,7 +131,8 @@ export function PhoneExperience() {
       // Scroll choreography, rebuilt per breakpoint.
       const mm = gsap.matchMedia();
       mm.add({ mobile: "(max-width: 720px)", desktop: "(min-width: 721px)" }, (context) => {
-        const poses = context.conditions?.mobile ? mobilePoses : desktopPoses;
+        const mobile = Boolean(context.conditions?.mobile);
+        const poses = mobile ? mobilePoses : desktopPoses;
         Object.assign(scene.state, poses[0]);
         const timeline = gsap.timeline({
           defaults: { ease: "power2.inOut" },
@@ -131,17 +152,29 @@ export function PhoneExperience() {
 
         stage.querySelectorAll<HTMLElement>("[data-feature]").forEach((block) => {
           const items = block.querySelectorAll("[data-feature-item]");
-          gsap.timeline({ scrollTrigger: { trigger: block, start: "top bottom", end: "bottom top", scrub: true } })
-            .fromTo(items, { autoAlpha: 0, y: 70 }, { autoAlpha: 1, y: 0, duration: 0.28, stagger: 0.035, ease: "power2.out" }, 0.16)
-            .to(items, { autoAlpha: 0, y: -70, duration: 0.24, stagger: 0.025, ease: "power2.in" }, 0.66)
-            .set({}, {}, 1);
+          const card = block.querySelector<HTMLElement>("[data-feature-card]");
+          const timeline = gsap.timeline({ scrollTrigger: { trigger: block, start: "top bottom", end: "bottom top", scrub: true } });
+          if (mobile && card) {
+            // Phones: the glass card travels with the page and settles in the middle of the screen as its pose lands.
+            // Opacity and scale go on the card itself; on an ancestor they would cut the phone out of its backdrop blur.
+            const lift = reduce ? 0 : 1;
+            timeline
+              .fromTo(card, { autoAlpha: 0, yPercent: 16 * lift, scale: 1 - 0.06 * lift }, { autoAlpha: 1, yPercent: 0, scale: 1, duration: 0.26, ease: "power2.out" }, 0.12)
+              .fromTo(items, { autoAlpha: 0, y: 18 * lift }, { autoAlpha: 1, y: 0, duration: 0.2, stagger: 0.028, ease: "power2.out" }, 0.17)
+              .to(card, { autoAlpha: 0, yPercent: -8 * lift, scale: 1 - 0.04 * lift, duration: 0.22, ease: "power2.in" }, 0.62);
+          } else {
+            timeline
+              .fromTo(items, { autoAlpha: 0, y: 70 }, { autoAlpha: 1, y: 0, duration: 0.28, stagger: 0.035, ease: "power2.out" }, 0.16)
+              .to(items, { autoAlpha: 0, y: -70, duration: 0.24, stagger: 0.025, ease: "power2.in" }, 0.66);
+          }
+          timeline.set({}, {}, 1);
         });
 
+        const launchCard = stage.querySelector<HTMLElement>("[data-launch]");
         const launchItems = stage.querySelectorAll("[data-launch-item]");
-        gsap.fromTo(launchItems, { autoAlpha: 0, y: 46 }, {
-          autoAlpha: 1, y: 0, duration: 1, stagger: 0.07, ease: "expo.out",
-          scrollTrigger: { trigger: "[data-launch]", start: "top 72%", toggleActions: "play none none reverse" },
-        });
+        const launch = gsap.timeline({ scrollTrigger: { trigger: "[data-launch]", start: "top 78%", toggleActions: "play none none reverse" } });
+        if (mobile && launchCard) launch.fromTo(launchCard, { autoAlpha: 0, y: 40, scale: 0.96 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.9, ease: "expo.out" }, 0);
+        launch.fromTo(launchItems, { autoAlpha: 0, y: mobile ? 24 : 46 }, { autoAlpha: 1, y: 0, duration: 1, stagger: 0.07, ease: "expo.out" }, mobile ? 0.12 : 0);
       });
       cleanups.push(() => mm.revert());
 
@@ -215,7 +248,7 @@ export function PhoneExperience() {
   return (
     <div ref={stageRef} className={"xp is-" + status}>
       <div ref={stickyRef} className="xp-sticky" aria-hidden="true">
-        <div ref={bgRef} className="xp-bg" />
+        <div className="xp-bg"><div ref={glowRef} className="xp-glow" /></div>
         <p ref={backtextRef} className="xp-backtext"><span>iPhone 18</span><span>Pro Max</span></p>
         <canvas ref={canvasRef} className="xp-canvas" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -268,7 +301,7 @@ export function PhoneExperience() {
       {showcase.features.map((feature, index) => (
         <section className={"xp-section xp-feature xp-feature--" + feature.id} key={feature.id} aria-labelledby={"feature-" + feature.id}>
           <div className="wrap xp-feature-layout" data-feature>
-            <div className="xp-feature-content">
+            <div className="xp-feature-content" data-feature-card>
               <p className="xp-feature-index" data-feature-item><span>{String(index + 1).padStart(2, "0")}</span>{feature.label}</p>
               <h2 id={"feature-" + feature.id} data-feature-item>{feature.title}</h2>
               <p className="xp-feature-description" data-feature-item>{feature.description}</p>
