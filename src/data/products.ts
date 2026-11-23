@@ -44,7 +44,7 @@ export const products: Product[] = [
     availability: "confirmar",
     demo: true,
     price: null,
-    illustration: "/imagens/aparelho-dourado.webp",
+    illustration: "/imagens/iphone-16-pro-titanio-deserto.webp",
   },
   {
     slug: "iphone-15-128-gb",
@@ -56,7 +56,7 @@ export const products: Product[] = [
     availability: "confirmar",
     demo: true,
     price: null,
-    illustration: "/imagens/aparelho-azul.webp",
+    illustration: "/imagens/iphone-15-azul.webp",
   },
   {
     slug: "iphone-14-pro-256-gb",
@@ -70,7 +70,7 @@ export const products: Product[] = [
     price: null,
     battery: 91,
     conservation: "Marcas leves de uso",
-    illustration: "/imagens/aparelho-grafite.webp",
+    illustration: "/imagens/iphone-14-pro-preto-espacial.webp",
   },
   {
     slug: "iphone-13-128-gb",
@@ -82,7 +82,7 @@ export const products: Product[] = [
     availability: "confirmar",
     demo: true,
     price: null,
-    illustration: "/imagens/aparelho-azul.webp",
+    illustration: "/imagens/iphone-13-meia-noite.webp",
   },
   {
     slug: "iphone-15-pro-512-gb",
@@ -94,7 +94,7 @@ export const products: Product[] = [
     availability: "indisponivel",
     demo: true,
     price: null,
-    illustration: "/imagens/aparelho-grafite.webp",
+    illustration: "/imagens/iphone-15-pro-titanio-preto.webp",
   },
 ];
 
